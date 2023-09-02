@@ -9,6 +9,13 @@ from sklearn.model_selection import train_test_split
 """
 This is a research project for Machine Intelligence Systems as Full Sail University
 
+goals are to Load the dataset 
+clean any samples or features that need it
+perform EDA
+Choose a the right model for the data 
+produce visualizations
+do validation
+
 """
 
 def load_data():
