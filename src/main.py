@@ -85,8 +85,18 @@ def correlation_plots(df, out_dir):
     plt.close(fig='all')
 
 
+def train_dummy_regressor(X_train, y_train, X_test, y_test):
+    """Train a Dummy Regressor and evaluate its score."""
+    model = DummyRegressor(strategy='mean')
+    model.fit(X_train, y_train)
 
+    score = model.score(X_test, y_test)
+    return model, score
 
+"""
+input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
+output: survived
+"""
 if __name__ == '__main__':
     filename = 'titanic_passengers.csv'
     out_dir = './output'
@@ -95,6 +105,9 @@ if __name__ == '__main__':
     df = fill_age_knn(df)
     correlation_plots(df, out_dir)
 
+    # split the data
+    input_features = df['Pclass', 'Age', 'Parch', 'SibSp', 'Sex']
+    target = df['Survived']
 
 
 
