@@ -1,11 +1,11 @@
 Data Dictionary
 Variable	Definition	
-survival	Survival	
-pclass	Ticket class	
-sex	Sex	
-Age	Age in years	
-sibsp	# of siblings / spouses aboard the Titanic	
-parch	# of parents / children aboard the Titanic	
+survival	Survival O
+pclass	Ticket class I
+sex	Sex	I
+Age	Age in years	I
+sibsp	# of siblings / spouses aboard the Titanic	I
+parch	# of parents / children aboard the Titanic	I
 ticket	Ticket number	
 fare	Passenger fare	
 cabin	Cabin number	
@@ -20,7 +20,8 @@ pclass: A proxy for socio-economic status (SES)
 
 Key
 0 = No, 1 = Yes
-1 = 1st, 2 = 2nd, 3 = 3rdage: Age is fractional if less than 1. If the age is estimated, is it in the form of xx.5
+1 = 1st, 2 = 2nd, 3 = 3rd
+age: Age is fractional if less than 1. If the age is estimated, is it in the form of xx.5
 
 sibsp: The dataset defines family relations in this way...
 Sibling = brother, sister, stepbrother, stepsister
