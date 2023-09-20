@@ -9,6 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import KNNImputer
 import xgboost as xgb
 import warnings
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
 
 #added to get rid of the old python warning for seaborn
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -112,11 +114,13 @@ def train_dummy_classifier(X_train, y_train, X_test, y_test):
     return model, score
 
 
-def optimize_learning_rate(X_train, y_train):
+def optimize_model(X_train, y_train):
     """Optimize the learning rate for the XGBoost Classifier."""
     param_grid = {
-        'learning_rate': [0.001, 0.01, 0.05, 0.1, 0.2, 0.3, .5, .75, 1, 1.25, 1.5, 2, 3, 4, 5, 10, 20, 50, 100],
-
+        'learning_rate': [0.05, 0.1, 0.2, 0.3, .5, .7, 1],
+        'max_depth': [3, 6, 9],
+        'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
+        'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0]
     }
 
     model = xgb.XGBClassifier(objective='binary:logistic', tree_method='hist')
@@ -124,23 +128,22 @@ def optimize_learning_rate(X_train, y_train):
     grid_search = GridSearchCV(model, param_grid, cv=5, scoring='accuracy')
     grid_search.fit(X_train, y_train)
 
-
     best_score = grid_search.best_score_
 
-    return  best_score
-def xgboost_classifier(X_train, y_train, X_test, y_test, rounds=100, early_stopping_rounds=10, step_size=0.1):
+    return grid_search.best_params_, best_score
+
+
+def xgboost_classifier(X_train, y_train, X_test, y_test, rounds=100, early_stopping_rounds=10, best_params=None):
     dtrain = xgb.DMatrix(X_train, label=y_train)
     dvalid = xgb.DMatrix(X_test, label=y_test)
 
     params = {
-        'objective': 'binary:logistic', # binary classification (0 for dead, 1 for survived)
+        'objective': 'binary:logistic',
         'tree_method': 'hist',
-        'eta': step_size,  # learning rate
-        'max_depth': 4,  # depth of trees (do not go too high - risk of overfitting)
-        'subsample': 0.8,  # Fraction of data to train on (helps prevent overfitting)
-        'colsample_bytree': 0.8,  # Fraction of features to train on
-        'eval_metric': 'error',
+        'eval_metric': 'error'
     }
+    if best_params:
+        params.update(best_params)
 
     evals_result = {}
     bst = xgb.train(params, dtrain, num_boost_round=rounds, evals=[(dvalid, 'valid')],
@@ -151,6 +154,25 @@ def xgboost_classifier(X_train, y_train, X_test, y_test, rounds=100, early_stopp
 
     print(f"Best Round: {best_round}. Best Score: {best_score}")
     return bst
+
+def validate_model(model, X_test, y_test):
+    dtest = xgb.DMatrix(X_test)
+    y_pred = model.predict(dtest)
+    y_pred_binary = np.round(y_pred).astype(int)
+
+    accuracy = accuracy_score(y_test, y_pred_binary)
+    precision = precision_score(y_test, y_pred_binary)
+    recall = recall_score(y_test, y_pred_binary)
+    f1 = f1_score(y_test, y_pred_binary)
+    conf_matrix = confusion_matrix(y_test, y_pred_binary)
+
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+    print("Confusion Matrix:")
+    print(conf_matrix)
+
 
 """
 input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
@@ -170,7 +192,8 @@ if __name__ == '__main__':
     #df = scale_data(df)
 
     # split the data for the 1st model - XGB Classifier to predict survival of a passenger
-    input_features = df[['Pclass', 'Age', 'Parch', 'SibSp', 'Sex']]
+    df['FamilySize'] = df['Parch'] + df['SibSp']
+    input_features = df[['Pclass', 'Age', 'FamilySize', 'Sex']]
     who_survived = df['Survived'].astype(int)
     X_train, X_test, y_train, y_test = train_test_split(input_features, who_survived, test_size=0.2, random_state=42)
 
@@ -179,12 +202,15 @@ if __name__ == '__main__':
     print(f'Dummy Score (if you cant beat this go back to the drawing board: {score}')
 
     print('Training a XGBoost Classifier')
-    step_size = optimize_learning_rate(X_train, y_train)
-    bst = xgboost_classifier(X_train, y_train, X_test, y_test, num_rounds, early_stopping_rounds, step_size)
+    best_params, best_score = optimize_model(X_train, y_train)
+    print("Best Parameters:", best_params)
+    bst = xgboost_classifier(X_train, y_train, X_test, y_test, best_params=best_params)
     print('Done Training')
 
-    # save the model
+    validate_model(bst, X_test, y_test)
     bst.save_model(os.path.join(out_dir, 'xgb_classifier.model'))
+    print('Model Saved')
+
 
     # see which features were most important in the decision
     # results are surprising, Sex was least important with Age being most important.
