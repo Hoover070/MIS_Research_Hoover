@@ -141,10 +141,10 @@ def optimize_knn_model(X_train, y_train):
 
     return best_score, best_params
 
-def knn_model_cv(X_train, y_train, X_test, y_test, k_folds=5, test_size=0.2, random_state=42, n_neighbors=3, metric='euclidean', weights='uniform', algorithm='auto'):
+def knn_model_cv(X_train, y_train, X_test, y_test, k_folds=5, n_neighbors=3):
 
     #training KNN
-    model = KNeighborsClassifier(n_neighbors=n_neighbors)  # Start with any k, say 3
+    model = KNeighborsClassifier(n_neighbors=n_neighbors)
     cv_scores = cross_val_score(model, X_train, y_train, cv=k_folds)
     print(f"Mean CV Accuracy: {np.mean(cv_scores):.2f}, Std: {np.std(cv_scores):.2f}")
     model = model.fit(X_train, y_train)
@@ -162,9 +162,8 @@ def knn_model_cv(X_train, y_train, X_test, y_test, k_folds=5, test_size=0.2, ran
     print(f"Train-Test Accuracy Difference: {difference:.2f}")
 
     if train_accuracy > test_accuracy and difference > 0.10:
-        print(
-            "The model might be overfitting because the training accuracy is significantly higher than the testing accuracy.")
-    elif train_accuracy < 0.75 and test_accuracy < 0.75:  # Threshold of 0.6 is arbitrary; adjust as per your problem domain
+        print("The model might be overfitting because the training accuracy is significantly higher than the testing accuracy.")
+    elif train_accuracy < 0.75 and test_accuracy < 0.75:
         print("The model might be underfitting as both training and testing accuracies are low.")
     else:
         print("The model seems to be performing well and generalizing to new data.")
@@ -204,21 +203,21 @@ if __name__ == '__main__':
     print('Training a Dummy Classifier')
     dummy_model, dummy_score = train_dummy_classifier(X_train, y_train, X_test, y_test)
     print(f'Dummy Score: {dummy_score}')
-    #
-    # print('Optimizing KNN Model')
-    # best_cv_score, best_params = optimize_knn_model(X_train, y_train)
-    # print(f'Best optimized CV Score: {best_cv_score}')
-    # print(f'Best optimized Parameters: {best_params}')
-    #
-    # # train a KNN model using optimized params
-    # best_knn = KNeighborsClassifier(**best_params)
-    # best_knn.fit(X_train, y_train)
-    #
-    # # Evaluate the KNN model on the test dataset
-    # optimized_test_score = best_knn.score(X_test, y_test)
-    # optimized_training_score = best_knn.score(X_train, y_train)
-    # print(f'Optimized KNN Training Score: {optimized_training_score}')
-    # print(f'Optimized KNN Test Score: {optimized_test_score}')
+
+    print('Optimizing KNN Model')
+    best_cv_score, best_params = optimize_knn_model(X_train, y_train)
+    print(f'Best optimized CV Score: {best_cv_score}')
+    print(f'Best optimized Parameters: {best_params}')
+
+    # train a KNN model using optimized params
+    best_knn = KNeighborsClassifier(**best_params)
+    best_knn.fit(X_train, y_train)
+
+    # Evaluate the KNN model on the test dataset
+    optimized_test_score = best_knn.score(X_test, y_test)
+    optimized_training_score = best_knn.score(X_train, y_train)
+    print(f'Optimized KNN Training Score: {optimized_training_score}')
+    print(f'Optimized KNN Test Score: {optimized_test_score}')
 
     cv_test_score = cross_val_score(model, X_test, y_test, cv=5)
     print(f'standard CV Test Score: {cv_test_score}')
@@ -229,15 +228,15 @@ if __name__ == '__main__':
 
 
     # train ElasticNet model
-    # print('Training an ElasticNet Model')
-    # elastic_net = ElasticNet()
-    # elastic_net.fit(X_train, y_train)
-    #
-    # # evaluate the ElasticNet model
-    # elastic_net_test_score = elastic_net.score(X_test, y_test)
-    # elastic_net_training_score = elastic_net.score(X_train, y_train)
-    # print(f'ElasticNet Training Score: {elastic_net_training_score}')
-    # print(f'ElasticNet Test Score: {elastic_net_test_score}')
+    print('Training an ElasticNet Model')
+    elastic_net = ElasticNet()
+    elastic_net.fit(X_train, y_train)
+
+    # evaluate the ElasticNet model
+    elastic_net_test_score = elastic_net.score(X_test, y_test)
+    elastic_net_training_score = elastic_net.score(X_train, y_train)
+    print(f'ElasticNet Training Score: {elastic_net_training_score}')
+    print(f'ElasticNet Test Score: {elastic_net_test_score}')
 
     #
     # correlation_plots(df, out_dir)
