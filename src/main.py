@@ -35,6 +35,11 @@ Goal of the project is to predict if a passenger survived the titanic disaster
 input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
 output: survived
 """
+#usecols=['Pclass', 'Age', 'Parch', 'SibSp', 'Sex', 'Survived']) = 87/84/3 - default
+#usecols=['Pclass', 'Age', 'Parch', 'SibSp', 'Survived'])  = 79/74/5 (no sex)
+#usecols=['Pclass', 'Parch', 'SibSp','Sex', 'Survived']) = 80/80/0 (no age)
+#secols=[ 'Age', 'Parch', 'SibSp', 'Sex', 'Survived']) = 85/82/3 (no pclass)
+#usecols=['Pclass', 'Sex', 'Survived']) = 79/77/3 (no age, parch, sibsp)
 
 def load_data():
     """Load data from Titanic CSV file"""
@@ -50,6 +55,13 @@ def inspect_data(data):
     print(data.describe())
     print(data.isnull().sum())
     print(data.info())
+
+def class_balance(df, target):
+    """Display a bar chart showing the class balance of a dataframe."""
+    sns.countplot(x=target, data=df, order=sorted(df[target].unique()))
+    plt.savefig(os.path.join(out_dir, f'class_balance_{target}.png'))
+
+
 
 def convert_sex(df):
     """Sex change from obj to binary values"""
@@ -72,15 +84,7 @@ def fill_age_knn(df):
 
     return df_imputed
 
-def scale_data(df):
-    """Scale the data."""
-    # create a copy of the df
-    df_scaled = df.copy()
 
-    scaler = StandardScaler()
-    scaled_values = scaler.fit_transform(df_scaled)
-
-    return pd.DataFrame(scaled_values, columns=df.columns)
 
 def correlation_plots(df, out_dir):
     """Create correlation plots."""
@@ -91,7 +95,7 @@ def correlation_plots(df, out_dir):
     plt.title('Correlation Matrix')
 
 
-    # Annotate the heatmap manually
+    # annotate the heatmap manually (annot is only annotating the first row and IDK how to fix it, so I'm doing it manually)
     for i in range(correlation_matrix.shape[0]):
         for j in range(correlation_matrix.shape[1]):
             ax.text(j + 0.5, i + 0.5, f'{correlation_matrix.iloc[i, j]:.2f}',
@@ -140,40 +144,34 @@ def optimize_knn_model(X_train, y_train):
 
 def knn_model_cv(X_train, y_train, X_test, y_test, k_folds=5, test_size=0.2, random_state=42, n_neighbors=3, metric='euclidean', weights='uniform', algorithm='auto'):
 
-    # Training KNN
-    knn = KNeighborsClassifier(n_neighbors=n_neighbors)  # Start with any k, say 3
-
-    # Use cross-validation to estimate performance
-    cv_scores = cross_val_score(knn, X_train, y_train, cv=k_folds)
+    #training KNN
+    model = KNeighborsClassifier(n_neighbors=n_neighbors)  # Start with any k, say 3
+    cv_scores = cross_val_score(model, X_train, y_train, cv=k_folds)
     print(f"Mean CV Accuracy: {np.mean(cv_scores):.2f}, Std: {np.std(cv_scores):.2f}")
+    model = model.fit(X_train, y_train)
 
-    # Fit the model on the entire training data
-    knn = knn.fit(X_train, y_train)
 
-    # Predicting and Evaluating on the test set
-    y_pred = knn.predict(X_test)
+    #prediction and testing
+    y_pred = model.predict(X_test)
     test_accuracy = accuracy_score(y_test, y_pred)
 
-    #Training score
-    train_accuracy = knn.score(X_train, y_train)
+    train_accuracy = model.score(X_train, y_train)
 
     difference = train_accuracy - test_accuracy
     print(f"Training Accuracy: {train_accuracy:.2f}")
     print(f"Testing Accuracy: {test_accuracy:.2f}")
     print(f"Train-Test Accuracy Difference: {difference:.2f}")
 
-    if train_accuracy > test_accuracy and difference > 0.05:  # You can adjust the threshold (0.05) as needed
+    if train_accuracy > test_accuracy and difference > 0.10:
         print(
             "The model might be overfitting because the training accuracy is significantly higher than the testing accuracy.")
-    elif train_accuracy < 0.6 and test_accuracy < 0.6:  # Threshold of 0.6 is arbitrary; adjust as per your problem domain
+    elif train_accuracy < 0.75 and test_accuracy < 0.75:  # Threshold of 0.6 is arbitrary; adjust as per your problem domain
         print("The model might be underfitting as both training and testing accuracies are low.")
     else:
         print("The model seems to be performing well and generalizing to new data.")
 
+    return model
 
-
-
-    return knn
 
 
 """
@@ -186,6 +184,11 @@ if __name__ == '__main__':
     df = load_data()
     df = convert_sex(df)
     df = fill_age_knn(df)
+    df.info()
+
+    for col in df.columns:
+        class_balance(df, col)
+
 
     # split and transform the data for the model
     input_features = df.drop("Survived", axis=1)
@@ -202,16 +205,16 @@ if __name__ == '__main__':
     print('Training a Dummy Classifier')
     dummy_model, dummy_score = train_dummy_classifier(X_train, y_train, X_test, y_test)
     print(f'Dummy Score: {dummy_score}')
-
+    #
     # print('Optimizing KNN Model')
     # best_cv_score, best_params = optimize_knn_model(X_train, y_train)
     # print(f'Best optimized CV Score: {best_cv_score}')
     # print(f'Best optimized Parameters: {best_params}')
     #
-    # # Train a KNN model using the entire training dataset with the best hyperparameters
+    # # train a KNN model using optimized params
     # best_knn = KNeighborsClassifier(**best_params)
     # best_knn.fit(X_train, y_train)
-
+    #
     # # Evaluate the KNN model on the test dataset
     # optimized_test_score = best_knn.score(X_test, y_test)
     # optimized_training_score = best_knn.score(X_train, y_train)
@@ -226,73 +229,72 @@ if __name__ == '__main__':
     print(f'CV KNN Test Score: {model_test_score}')
 
 
-    # # Train an ElasticNet model using the entire training dataset
+    # train ElasticNet model
     # print('Training an ElasticNet Model')
     # elastic_net = ElasticNet()
     # elastic_net.fit(X_train, y_train)
     #
-    # # Evaluate the ElasticNet model on the test dataset
+    # # evaluate the ElasticNet model
     # elastic_net_test_score = elastic_net.score(X_test, y_test)
     # elastic_net_training_score = elastic_net.score(X_train, y_train)
     # print(f'ElasticNet Training Score: {elastic_net_training_score}')
     # print(f'ElasticNet Test Score: {elastic_net_test_score}')
 
-
-    correlation_plots(df, out_dir)
-
-
-
-
-    # learning curve
-    train_sizes, train_scores, valid_scores = learning_curve(model, input_features, target, cv=5)
-    plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
-    plt.plot(train_sizes, valid_scores.mean(axis=1), label='Validation score')
-    plt.xlabel("Training Set Size")
-    plt.ylabel("Accuracy Score")
-    plt.title("Learning Curve")
-    plt.legend()
-    plt.savefig(os.path.join(out_dir, 'learning_curve.png'))
-    plt.close()
-
-    # validation curve
-    param_range = np.arange(1, 50, 2)
-    train_scores, valid_scores = validation_curve(model, input_features, target, param_range=param_range, cv=5, param_name='n_neighbors')
-    plt.plot(param_range, train_scores.mean(axis=1), label='Training score')
-    plt.plot(param_range, valid_scores.mean(axis=1), label='Validation score')
-    plt.xlabel("Number of Neighbors")
-    plt.ylabel("Accuracy Score")
-    plt.title("Validation Curve")
-    plt.legend()
-    plt.savefig(os.path.join(out_dir, 'validation_curve.png'))
-    plt.close()
-
-    # Compute the confusion matrix
-    conf_mat = confusion_matrix(y_test, model.predict(X_test))
-
-    # Plot the confusion matrix using seaborn's heatmap function
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(conf_mat, annot=True, fmt="d", cmap="Blues",
-                xticklabels=['Not Survived', 'Survived'],
-                yticklabels=['Not Survived', 'Survived'])
-    plt.ylabel('Actual')
-    plt.xlabel('Predicted')
-    plt.title("Confusion Matrix")
-    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'))
-    plt.close()
-
-
-    # precision recall curve
-    precision, recall, _ = precision_recall_curve(y_test, model.predict_proba(X_test)[:, 1])
-
-    plt.figure()
-    plt.plot(recall, precision, color='b', lw=1)
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Precision-Recall Curve')
-    plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'))
-
-
-
-
-
-
+    #
+    # correlation_plots(df, out_dir)
+    #
+    #
+    #
+    #
+    # # learning curve
+    # train_sizes, train_scores, valid_scores = learning_curve(model, input_features, target, cv=5)
+    # plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
+    # plt.plot(train_sizes, valid_scores.mean(axis=1), label='Validation score')
+    # plt.xlabel("Training Set Size")
+    # plt.ylabel("Accuracy Score")
+    # plt.title("Learning Curve")
+    # plt.legend()
+    # plt.savefig(os.path.join(out_dir, 'learning_curve.png'))
+    # plt.close()
+    #
+    # # validation curve
+    # param_range = np.arange(1, 50, 2)
+    # train_scores, valid_scores = validation_curve(model, input_features, target, param_range=param_range, cv=5, param_name='n_neighbors')
+    # plt.plot(param_range, train_scores.mean(axis=1), label='Training score')
+    # plt.plot(param_range, valid_scores.mean(axis=1), label='Validation score')
+    # plt.xlabel("Number of Neighbors")
+    # plt.ylabel("Accuracy Score")
+    # plt.title("Validation Curve")
+    # plt.legend()
+    # plt.savefig(os.path.join(out_dir, 'validation_curve.png'))
+    # plt.close()
+    #
+    # # confusion matrix
+    # conf_mat = confusion_matrix(y_test, model.predict(X_test))
+    #
+    # plt.figure(figsize=(8, 6))
+    # sns.heatmap(conf_mat, annot=True, fmt="d", cmap="Blues",
+    #             xticklabels=['Not Survived', 'Survived'],
+    #             yticklabels=['Not Survived', 'Survived'])
+    # plt.ylabel('Actual')
+    # plt.xlabel('Predicted')
+    # plt.title("Confusion Matrix")
+    # plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'))
+    # plt.close()
+    #
+    #
+    # # precision recall curve
+    # precision, recall, _ = precision_recall_curve(y_test, model.predict_proba(X_test)[:, 1])
+    #
+    # plt.figure()
+    # plt.plot(recall, precision, color='b', lw=1)
+    # plt.xlabel('Recall')
+    # plt.ylabel('Precision')
+    # plt.title('Precision-Recall Curve')
+    # plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'))
+    #
+    #
+    #
+    #
+    #
+    #
