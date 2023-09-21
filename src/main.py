@@ -42,7 +42,7 @@ output: survived
 #usecols=['Pclass', 'Sex', 'Survived']) = 79/77/3 (no age, parch, sibsp)
 
 def load_data():
-    """Load data from Titanic CSV file"""
+    """load data from Titanic CSV file"""
     filename = 'titanic_passengers.csv'
     data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
     path = os.path.join(data_dir, filename)
@@ -51,20 +51,20 @@ def load_data():
     return df
 
 def inspect_data(data):
-    """Inspect the data."""
+    """inspect the data."""
     print(data.describe())
     print(data.isnull().sum())
     print(data.info())
 
 def class_balance(df, target):
-    """Display a bar chart showing the class balance of a dataframe."""
+    """display a bar chart showing the class balance of a dataframe."""
     sns.countplot(x=target, data=df, order=sorted(df[target].unique()))
     plt.savefig(os.path.join(out_dir, f'class_balance_{target}.png'))
 
 
 
 def convert_sex(df):
-    """Sex change from obj to binary values"""
+    """sex change from obj to binary values"""
     df = df[df['Sex'] != '']
     df['Sex'] = df['Sex'].replace({'male': 0, 'female': 1})
     return df
@@ -87,8 +87,7 @@ def fill_age_knn(df):
 
 
 def correlation_plots(df, out_dir):
-    """Create correlation plots."""
-    # create a correlation matrix
+    """create correlation matrix"""
     correlation_matrix = df.corr()
     plt.figure(figsize=(15, 12))
     ax = sns.heatmap(correlation_matrix, cmap='coolwarm', center=0)
@@ -112,7 +111,7 @@ def correlation_plots(df, out_dir):
 
 
 def train_dummy_classifier(X_train, y_train, X_test, y_test):
-    """Train a Dummy Classifier and evaluate its score."""
+    """train a Dummy Classifier and evaluate its score."""
     model = DummyClassifier()
     model.fit(X_train, y_train)
     score = model.score(X_test, y_test)
@@ -120,7 +119,7 @@ def train_dummy_classifier(X_train, y_train, X_test, y_test):
 
 
 def optimize_knn_model(X_train, y_train):
-    """Optimize the KNN model hyperparameters using GridSearchCV."""
+    """optimize the KNN model hyperparameters using GridSearchCV."""
     param_grid = {
         'n_neighbors': list(range(1, 100, 1)),
         'metric': ['euclidean', 'manhattan', 'chebyshev', 'minkowski'],
