@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.cluster import KMeans
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import accuracy_score, precision_recall_curve, confusion_matrix
@@ -14,11 +15,14 @@ from sklearn.impute import KNNImputer
 """
 This is a research project for Machine Intelligence Systems as Full Sail University
 
-Takes 1 minute and 43 seconds to run on my machine
+
 
 Goal of the project is to create a ML model that can predict whether a passenger survived the Titanic disaster based on the following features:
 input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
 output: survived
+
+
+
 """
 #usecols=['Pclass', 'Age', 'Parch', 'SibSp', 'Sex', 'Survived']) = 87/84/3 - default
 #usecols=['Pclass', 'Age', 'Parch', 'SibSp', 'Survived'])  = 79/74/5 (no sex)
@@ -156,6 +160,20 @@ def knn_model_cv(X_train, y_train, X_test, y_test, k_folds=5, n_neighbors=3):
     return model
 
 
+def perform_clustering(df, n_clusters=3):
+    """Perform clustering on the data and return dataframe with cluster labels."""
+
+    #Select features for clustering
+    features_for_clustering = df.drop(['Survived'], axis=1)
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    clusters = kmeans.fit_predict(features_for_clustering)
+
+    df['Cluster'] = clusters
+
+    return df
+
+
 
 """
 input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
@@ -276,8 +294,24 @@ if __name__ == '__main__':
     plt.title('Precision-Recall Curve')
     plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'))
 
+    # clustering
+    df_with_clusters = perform_clustering(df.copy(), 4)
 
+    plt.figure(figsize=(10, 6))
+    sns.violinplot(data=df_with_clusters, x='Survived', y='Age')
+    plt.title('Age distribution by Survival Status')
+    plt.savefig(os.path.join(out_dir, 'age_distribution_by_cluster.png'))
 
+    plt.figure(figsize=(10, 6))
+    sns.countplot(data=df_with_clusters, x='Pclass', hue='Survived')
+    plt.title('Number of survivors per class')
+    plt.savefig(os.path.join(out_dir, 'survivors_per_class.png'))
+
+    survival_by_gender = df_with_clusters.groupby('Sex')['Survived'].value_counts(normalize=True).unstack().mul(100)
+    survival_by_gender.plot(kind='bar', stacked=True, figsize=(10, 6))
+    plt.ylabel('Percentage (%)')
+    plt.title('Survival Rate by Sex')
+    plt.savefig(os.path.join(out_dir, 'survivors_per_sex.png'))
 
 
 
