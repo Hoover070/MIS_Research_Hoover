@@ -5,33 +5,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import ElasticNet
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_curve, precision_recall_curve
-from sklearn.model_selection import train_test_split, GridSearchCV, KFold, cross_val_score, learning_curve, \
-    validation_curve
+from sklearn.metrics import accuracy_score, precision_recall_curve, confusion_matrix
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score, validation_curve, learning_curve
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import KNNImputer
-import xgboost as xgb
-import warnings
-
-#added to get rid of the old python warning for seaborn
-warnings.simplefilter(action='ignore', category=FutureWarning)
 
 """
 This is a research project for Machine Intelligence Systems as Full Sail University
 
-goals are to Load the dataset 
-clean any samples or features that need it
-perform EDA - determin if the data is linear or non-linear, and if it needs to be scaled
-Choose a the right model for the data 
-produce visualizations
-do validation
+Takes 1 minute and 43 seconds to run on my machine
 
-We will then use a classification model to predict if a passenger survived the titanic
-
-
-
-Goal of the project is to predict if a passenger survived the titanic disaster
+Goal of the project is to create a ML model that can predict whether a passenger survived the Titanic disaster based on the following features:
 input: Pclass(Ticket Class: 1 = upper, 2 = middle, 3 = lower), Age, Parch(num parents), Sibsp(num sibling), Sex 
 output: survived
 """
@@ -209,11 +194,11 @@ if __name__ == '__main__':
     print(f'Best optimized CV Score: {best_cv_score}')
     print(f'Best optimized Parameters: {best_params}')
 
-    # train a KNN model using optimized params
+    #train a KNN model using optimized params
     best_knn = KNeighborsClassifier(**best_params)
     best_knn.fit(X_train, y_train)
 
-    # Evaluate the KNN model on the test dataset
+    #evaluate the KNN model on the test dataset
     optimized_test_score = best_knn.score(X_test, y_test)
     optimized_training_score = best_knn.score(X_train, y_train)
     print(f'Optimized KNN Training Score: {optimized_training_score}')
@@ -227,72 +212,72 @@ if __name__ == '__main__':
     print(f'CV KNN Test Score: {model_test_score}')
 
 
-    # train ElasticNet model
+    #train ElasticNet model
     print('Training an ElasticNet Model')
     elastic_net = ElasticNet()
     elastic_net.fit(X_train, y_train)
 
-    # evaluate the ElasticNet model
+    #evaluate the ElasticNet model
     elastic_net_test_score = elastic_net.score(X_test, y_test)
     elastic_net_training_score = elastic_net.score(X_train, y_train)
     print(f'ElasticNet Training Score: {elastic_net_training_score}')
     print(f'ElasticNet Test Score: {elastic_net_test_score}')
 
-    #
-    # correlation_plots(df, out_dir)
-    #
-    #
-    #
-    #
-    # # learning curve
-    # train_sizes, train_scores, valid_scores = learning_curve(model, input_features, target, cv=5)
-    # plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
-    # plt.plot(train_sizes, valid_scores.mean(axis=1), label='Validation score')
-    # plt.xlabel("Training Set Size")
-    # plt.ylabel("Accuracy Score")
-    # plt.title("Learning Curve")
-    # plt.legend()
-    # plt.savefig(os.path.join(out_dir, 'learning_curve.png'))
-    # plt.close()
-    #
-    # # validation curve
-    # param_range = np.arange(1, 50, 2)
-    # train_scores, valid_scores = validation_curve(model, input_features, target, param_range=param_range, cv=5, param_name='n_neighbors')
-    # plt.plot(param_range, train_scores.mean(axis=1), label='Training score')
-    # plt.plot(param_range, valid_scores.mean(axis=1), label='Validation score')
-    # plt.xlabel("Number of Neighbors")
-    # plt.ylabel("Accuracy Score")
-    # plt.title("Validation Curve")
-    # plt.legend()
-    # plt.savefig(os.path.join(out_dir, 'validation_curve.png'))
-    # plt.close()
-    #
-    # # confusion matrix
-    # conf_mat = confusion_matrix(y_test, model.predict(X_test))
-    #
-    # plt.figure(figsize=(8, 6))
-    # sns.heatmap(conf_mat, annot=True, fmt="d", cmap="Blues",
-    #             xticklabels=['Not Survived', 'Survived'],
-    #             yticklabels=['Not Survived', 'Survived'])
-    # plt.ylabel('Actual')
-    # plt.xlabel('Predicted')
-    # plt.title("Confusion Matrix")
-    # plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'))
-    # plt.close()
-    #
-    #
-    # # precision recall curve
-    # precision, recall, _ = precision_recall_curve(y_test, model.predict_proba(X_test)[:, 1])
-    #
-    # plt.figure()
-    # plt.plot(recall, precision, color='b', lw=1)
-    # plt.xlabel('Recall')
-    # plt.ylabel('Precision')
-    # plt.title('Precision-Recall Curve')
-    # plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'))
-    #
-    #
-    #
-    #
-    #
-    #
+
+    correlation_plots(df, out_dir)
+
+
+
+
+    # learning curve
+    train_sizes, train_scores, valid_scores = learning_curve(model, input_features, target, cv=5)
+    plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
+    plt.plot(train_sizes, valid_scores.mean(axis=1), label='Validation score')
+    plt.xlabel("Training Set Size")
+    plt.ylabel("Accuracy Score")
+    plt.title("Learning Curve")
+    plt.legend()
+    plt.savefig(os.path.join(out_dir, 'learning_curve.png'))
+    plt.close()
+
+    # validation curve
+    param_range = np.arange(1, 50, 2)
+    train_scores, valid_scores = validation_curve(model, input_features, target, param_range=param_range, cv=5, param_name='n_neighbors')
+    plt.plot(param_range, train_scores.mean(axis=1), label='Training score')
+    plt.plot(param_range, valid_scores.mean(axis=1), label='Validation score')
+    plt.xlabel("Number of Neighbors")
+    plt.ylabel("Accuracy Score")
+    plt.title("Validation Curve")
+    plt.legend()
+    plt.savefig(os.path.join(out_dir, 'validation_curve.png'))
+    plt.close()
+
+    # confusion matrix
+    conf_mat = confusion_matrix(y_test, model.predict(X_test))
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(conf_mat, annot=True, fmt="d", cmap="Blues",
+                xticklabels=['Not Survived', 'Survived'],
+                yticklabels=['Not Survived', 'Survived'])
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
+    plt.title("Confusion Matrix")
+    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'))
+    plt.close()
+
+
+    # precision recall curve
+    precision, recall, _ = precision_recall_curve(y_test, model.predict_proba(X_test)[:, 1])
+
+    plt.figure()
+    plt.plot(recall, precision, color='b', lw=1)
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+    plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'))
+
+
+
+
+
+
