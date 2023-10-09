@@ -1,5 +1,5 @@
 
-Welcome to my repository for the Machine Intelligence Systems project at Full Sail University. This project received a perfect score of 100, reflecting a comprehensive application of machine learning algorithms to analyze the survival of passengers on the Titanic.
+Welcome to my repository for the Machine Intelligence Systems project at Full Sail University. This project received a score of 100, reflecting a comprehensive understanding and application of machine learning algorithms to analyze the survival of passengers on the Titanic.
 
 Project Overview:
 
