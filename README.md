@@ -31,4 +31,4 @@ Technologies Used:
     Seaborn
 
 Contact:
-For any inquiries or discussions related to this project, feel free to reach out at your_email@example.com or LinkedIn Profile.
+For any inquiries or discussions related to this project, feel free to reach out at billhoover070@gmail.com or https://www.linkedin.com/in/williamhoover70/.
